@@ -48,6 +48,7 @@ typedef enum
 // Possible values for TriggerSelector feature
 typedef enum
 {
+    GST_VIMBASRC_TRIGGERSELECTOR_UNCHANGED,
     GST_VIMBASRC_TRIGGERSELECTOR_ACQUISITION_START,
     GST_VIMBASRC_TRIGGERSELECTOR_ACQUISITION_END,
     GST_VIMBASRC_TRIGGERSELECTOR_ACQUISITION_ACTIVE,
@@ -66,6 +67,7 @@ typedef enum
 // Possible values for TriggerMode feature
 typedef enum
 {
+    GST_VIMBASRC_TRIGGERMODE_UNCHANGED,
     GST_VIMBASRC_TRIGGERMODE_OFF,
     GST_VIMBASRC_TRIGGERMODE_ON
 } GstVimbasrcTriggerModeValue;
@@ -73,6 +75,7 @@ typedef enum
 // Possible values for the TriggerSource feature
 typedef enum
 {
+    GST_VIMBASRC_TRIGGERSOURCE_UNCHANGED,
     GST_VIMBASRC_TRIGGERSOURCE_SOFTWARE,
     GST_VIMBASRC_TRIGGERSOURCE_LINE0,
     GST_VIMBASRC_TRIGGERSOURCE_LINE1,
@@ -119,12 +122,20 @@ typedef enum
 // Possible values for TriggerActivation feature
 typedef enum
 {
+    GST_VIMBASRC_TRIGGERACTIVATION_UNCHANGED,
     GST_VIMBASRC_TRIGGERACTIVATION_RISING_EDGE,
     GST_VIMBASRC_TRIGGERACTIVATION_FALLING_EDGE,
     GST_VIMBASRC_TRIGGERACTIVATION_ANY_EDGE,
     GST_VIMBASRC_TRIGGERACTIVATION_LEVEL_HIGH,
     GST_VIMBASRC_TRIGGERACTIVATION_LEVEL_LOW
 } GstVimbasrcTriggerActivationValue;
+
+// Implemented handling approaches for incomplete frames
+typedef enum
+{
+    GST_VIMBASRC_INCOMPLETE_FRAME_HANDLING_DROP,
+    GST_VIMBASRC_INCOMPLETE_FRAME_HANDLING_SUBMIT
+} GstVimbasrcIncompleteFrameHandlingValue;
 
 typedef struct _GstVimbaSrc GstVimbaSrc;
 typedef struct _GstVimbaSrcClass GstVimbaSrcClass;
@@ -141,7 +152,7 @@ struct _GstVimbaSrc
 
     struct
     {
-        const gchar *id;
+        char *id;
         VmbHandle_t handle;
         VmbUint32_t supported_formats_count;
         // TODO: This overallocates since no camera will actually support all possible format matches. Allocate and fill
@@ -152,7 +163,7 @@ struct _GstVimbaSrc
     } camera;
     struct
     {
-        const char *camera_id;
+        char *settings_file_path;
         double exposuretime;
         int exposureauto;
         int balancewhiteauto;
@@ -165,6 +176,7 @@ struct _GstVimbaSrc
         int triggermode;
         int triggersource;
         int triggeractivation;
+        int incomplete_frame_handling;
     } properties;
 
     VmbFrame_t frame_buffers[NUM_VIMBA_FRAMES];

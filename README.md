@@ -7,14 +7,6 @@ GStreamer is multimedia framework which assembles pipelines from multiple elemen
 pass them directly into these pipelines. This enables a wide variety of uses such as live displays
 of the image data or encoding them to a video format.
 
-`vimbasrc` is currently officially supported on the following systems and architectures:
-- AMD64 (Validated on Ubuntu 18.04)
-- ARM64 (Validated on NVIDIA L4T 32.4.4)
-
-The following library versions have been validated to work with `vimbasrc`:
-- Vimba 4.2
-- GStreamer 1.14
-
 ## Building
 A `CMakeLists.txt` file is provided that helps build the plugin. For convenience this repository
 also contains two scripts (`build.sh` and `build.bat`) that run the appropriate cmake commands for
@@ -35,8 +27,8 @@ provided paths accordingly for your build system.
 ### Docker build environment (Linux only)
 To simplify the setup of a reproducible build environment, a `Dockerfile` based on an Ubuntu 18.04
 base image is provided, which when build includes all necessary dependencies, except the Vimba
-version against which `vimbasrc` is linked. This is added when the compile command is run by mounting
-a Vimba installation into the Docker container.
+version against which `vimbasrc` is linked. This is added when the compile command is run by
+mounting a Vimba installation into the Docker container.
 
 #### Building the docker image
 In order to build the docker image from the `Dockerfile`, run the following command inside the
@@ -63,25 +55,15 @@ docker run --rm -it --volume /path/to/gst-vimbasrc:/gst-vimbasrc --volume /path/
 ## Installation
 GStreamer plugins become available for use in pipelines, when GStreamer is able to load the shared
 library containing the desired element. GStreamer typically searches the directories defined in
-`GST_PLUGIN_SYSTEM_PATH`. If this variable is not defined, the default paths of the system wide
-GStreamer installation, as well as the `~/.local/share/gstreamer-<GST_API_VERSION>/plugins`
-directory of the current user are searched. Installing the `vimbasrc` element is therefore simply a
-matter of placing the compiled shared library into this search path and letting GStreamer load it.
+`GST_PLUGIN_SYSTEM_PATH`. By setting this variable to a directory and placing the shared library
+file in it, GStreamer will pick up the `vimbasrc` element for use.
 
-### Installation dependencies
-As the shared library containing the `vimbasrc` element  is dynamically linked, its linked
-dependencies must be loadable. As GStreamer itself is likely installed system wide, the dependencies
-on glib and GStreamer libraries should already be satisfied.
+The `vimbasrc` element uses VimbaC. In order to be usable the VimbaC shared library therefore needs
+to also be loadable when the element is started. The VimbaC library is provided as part of the Vimba
+SDK.
 
-In order to satisfy the dependency on `libVimbaC.so` the shared library needs to be placed in an
-appropriate entry of the `LD_LIBRARY_PATH`. The exact method for this is a matter of preference and
-distribution dependant. On Ubuntu systems one option would be to copy `libVimbaC.so` into
-`/usr/local/lib` or to add the directory containing `libVimbaC.so` to the `LD_LIBRARY_PATH` by
-adding an appropriate `.conf` file to `/etc/ld.so.conf.d/`.
-
-Correct installation of `libVimbaC.so` can be checked, by searching for its file name in the output
-of `ldconfig -v` (e.g.: `ldconfig -v | grep libVimbaC.so`). Alternatively correct loading of
-dependent shared libraries can be checked with `ldd` (e.g. `ldd libgstvimbasrc.so`).
+More detailed installation instructions for Linux and Windows can be found in the `INSTALLING.md`
+file in this repository.
 
 ## Usage
 **The vimbasrc plugin is still in active development. Please keep the _Known issues and limitations_
@@ -95,6 +77,8 @@ The following pipeline can for example be used to display the recorded camera im
 ```
 gst-launch-1.0 vimbasrc camera=DEV_1AB22D01BBB8 ! videoscale ! videoconvert ! queue ! autovideosink
 ```
+
+For further usage examples also take a look at the included `EXAMPLES.md` file
 
 ### Setting camera features
 To adjust the image acquisition process of the camera, access to settings like the exposure time are
@@ -202,6 +186,16 @@ is able to debayer the data into a widely accepted RGBA format.
 | BayerBG8            | bggr                           |
 
 ## Troubleshooting
+- The `vimbasrc` element is not loadable
+  - Ensure that the installation of the plugin was successful and that all required dependencies are
+    available. Installation instructions can be found in `INSTALLING.md`. To verify that the element
+    can be loaded try to inspect it by calling `gst-inspect-1.0 vimbasrc`.
+  - It is possible that the `vimbasrc` element is blacklisted by GStreamer. This can be determined
+    by checking the list ob blacklisted elements with `gst-inspect-1.0 --print-blacklist`. Resetting
+    the registry may be done by removing the file in which it is stored. It is typically saved in
+    `~/.cache/gstreamer-1.0/registry.x86_64.bin`. The exact file name depends on the architecture of
+    the system. For more details see [the official documentation on the
+    registry](https://gstreamer.freedesktop.org/documentation/gstreamer/gstregistry.html)
 - How can I enable logging for the plugin
   - To enable logging set the `GST_DEBUG` environment variable to `GST_DEBUG=vimbasrc:DEBUG` or
     another appropriate level. For further details see [the official
@@ -243,3 +237,17 @@ is able to debayer the data into a widely accepted RGBA format.
   the stride of the image data in the buffer. This explicit stride information is currently not
   implemented. For now it is therefore recommended to use `width` settings that are evenly divisible
   by 4.
+
+## Compatibility
+`vimbasrc` is currently officially supported on the following operating systems and architectures:
+- AMD64 (Validated on Ubuntu 20.04, Debian 10, CentOS 8.3)
+- ARM64 (Validated on NVIDIA L4T 32.5.1)
+- ARM32 (Validated on Raspberry Pi OS)
+- WIN64 (Validated on Win10 20H2)
+- WIN32 (Validated on Win10 20H2, 32Bit)
+
+The following library versions have been validated to work with vimbasrc:
+- Vimba 5.0
+- GStreamer 1.14 (NVIDIA L4T 32.5.1, Debian 10, Raspberry OS)
+- GStreamer 1.16 (Ubuntu 20.04, CentOS 8.3)
+- GStreamer 1.18 (Win10 20H2)

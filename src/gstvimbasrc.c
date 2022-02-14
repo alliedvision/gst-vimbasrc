@@ -1580,8 +1580,6 @@ VmbError_t set_roi(GstVimbaSrc *vimbasrc)
     // offsety
     if (vimbasrc->properties.offsety == INT_MAX) {
         VmbInt64_t vmb_offsety = (vmb_height - vimbasrc->properties.height) >> 1;
-        GST_DEBUG_OBJECT(vimbasrc, "Setting \"OffsetX\" to %d", vmb_offsety);
-        result = VmbFeatureIntSet(vimbasrc->camera.handle, "OffsetY", vmb_offsety);
         g_object_set(vimbasrc, "offsety", (int)vmb_offsety, NULL);
     }
     GST_DEBUG_OBJECT(vimbasrc, "Setting \"OffsetY\" to %d", vimbasrc->properties.offsety);

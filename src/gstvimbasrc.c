@@ -377,10 +377,10 @@ static void gst_vimbasrc_class_init(GstVimbaSrcClass *klass)
         g_param_spec_int(
             "offsetx",
             "OffsetX feature setting",
-            "Horizontal offset from the origin to the region of interest (in pixels). If no explicit value is passed the RoI will be centered in the sensor.",
+            "Horizontal offset from the origin to the region of interest (in pixels). If -1 is passed the ROI will be centered in the sensor along the horizontal axis.",
+            -1,
+            G_MAXINT,
             0,
-            G_MAXINT,
-            G_MAXINT,
             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     g_object_class_install_property(
         gobject_class,
@@ -388,10 +388,10 @@ static void gst_vimbasrc_class_init(GstVimbaSrcClass *klass)
         g_param_spec_int(
             "offsety",
             "OffsetY feature setting",
-            "Vertical offset from the origin to the region of interest (in pixels). If no explicit value is passed the RoI will be centered in the sensor.",
+            "Vertical offset from the origin to the region of interest (in pixels). If -1 is passed the ROI will be centered in the sensor along the vertical axis.",
+            -1,
+            G_MAXINT,
             0,
-            G_MAXINT,
-            G_MAXINT,
             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     g_object_class_install_property(
         gobject_class,
@@ -1559,7 +1559,7 @@ VmbError_t set_roi(GstVimbaSrc *vimbasrc)
                            ErrorCodeToMessage(result));
     }
     // offsetx
-    if (vimbasrc->properties.offsetx == INT_MAX) {
+    if (vimbasrc->properties.offsetx == -1) {
         VmbInt64_t vmb_offsetx = (vmb_width - vimbasrc->properties.width) >> 1;
         g_object_set(vimbasrc, "offsetx", (int) vmb_offsetx, NULL);
     }
@@ -1578,7 +1578,7 @@ VmbError_t set_roi(GstVimbaSrc *vimbasrc)
     }
 
     // offsety
-    if (vimbasrc->properties.offsety == INT_MAX) {
+    if (vimbasrc->properties.offsety == -1) {
         VmbInt64_t vmb_offsety = (vmb_height - vimbasrc->properties.height) >> 1;
         g_object_set(vimbasrc, "offsety", (int)vmb_offsety, NULL);
     }

@@ -1561,6 +1561,8 @@ VmbError_t set_roi(GstVimbaSrc *vimbasrc)
     // offsetx
     if (vimbasrc->properties.offsetx == -1) {
         VmbInt64_t vmb_offsetx = (vmb_width - vimbasrc->properties.width) >> 1;
+        GST_DEBUG_OBJECT(vimbasrc, "ROI centering along x-axis requested. Calculated offsetx=%d",
+                         vmb_offsetx);
         g_object_set(vimbasrc, "offsetx", (int) vmb_offsetx, NULL);
     }
     GST_DEBUG_OBJECT(vimbasrc, "Setting \"OffsetX\" to %d", vimbasrc->properties.offsetx);
@@ -1580,6 +1582,8 @@ VmbError_t set_roi(GstVimbaSrc *vimbasrc)
     // offsety
     if (vimbasrc->properties.offsety == -1) {
         VmbInt64_t vmb_offsety = (vmb_height - vimbasrc->properties.height) >> 1;
+        GST_DEBUG_OBJECT(vimbasrc, "ROI centering along y-axis requested. Calculated offsety=%d",
+                         vmb_offsety);
         g_object_set(vimbasrc, "offsety", (int)vmb_offsety, NULL);
     }
     GST_DEBUG_OBJECT(vimbasrc, "Setting \"OffsetY\" to %d", vimbasrc->properties.offsety);

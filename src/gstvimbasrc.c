@@ -30,6 +30,7 @@
  */
 
 #include "gstvimbasrc.h"
+#include "gstvimbasrc_deviceprovider.h"
 #include "helpers.h"
 #include "vimba_helpers.h"
 #include "pixelformats.h"
@@ -1288,8 +1289,15 @@ static gboolean plugin_init(GstPlugin *plugin)
                             "debug category for vimbasrc element");
 
     /* FIXME Remember to set the rank if it's an element that is meant to be autoplugged by decodebin. */
-    return gst_element_register(plugin, "vimbasrc", GST_RANK_NONE,
-                                GST_TYPE_vimbasrc);
+    if (!gst_element_register(plugin, "vimbasrc", GST_RANK_NONE, GST_TYPE_vimbasrc))
+    {
+        return FALSE;
+    }
+
+    return gst_device_provider_register(plugin,
+                                        "vimbasrcdeviceprovider",
+                                        GST_RANK_PRIMARY + 1,
+                                        GST_TYPE_VIMBASRC_DEVICE_PROVIDER);
 }
 
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,

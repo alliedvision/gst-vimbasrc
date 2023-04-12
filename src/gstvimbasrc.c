@@ -30,6 +30,7 @@
  */
 
 #include "gstvimbasrc.h"
+#include "gstvimbasrc_deviceprovider.h"
 #include "helpers.h"
 #include "vimba_helpers.h"
 #include "pixelformats.h"
@@ -49,9 +50,6 @@
 static unsigned int vmb_open_count = 0;
 G_LOCK_DEFINE(vmb_open_count);
 
-GST_DEBUG_CATEGORY_STATIC(gst_vimbasrc_debug_category);
-#define GST_CAT_DEFAULT gst_vimbasrc_debug_category
-
 /* prototypes */
 
 static void gst_vimbasrc_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
@@ -65,6 +63,8 @@ static gboolean gst_vimbasrc_start(GstBaseSrc *src);
 static gboolean gst_vimbasrc_stop(GstBaseSrc *src);
 
 static GstFlowReturn gst_vimbasrc_create(GstPushSrc *src, GstBuffer **buf);
+
+GST_DEBUG_CATEGORY(gst_vimbasrc_debug_category);
 
 enum
 {
@@ -280,13 +280,7 @@ static GType gst_vimbasrc_incompleteframehandling_get_type(void)
 
 /* class initialization */
 
-G_DEFINE_TYPE_WITH_CODE(GstVimbaSrc,
-                        gst_vimbasrc,
-                        GST_TYPE_PUSH_SRC,
-                        GST_DEBUG_CATEGORY_INIT(gst_vimbasrc_debug_category,
-                                                "vimbasrc",
-                                                0,
-                                                "debug category for vimbasrc element"))
+G_DEFINE_TYPE(GstVimbaSrc, gst_vimbasrc, GST_TYPE_PUSH_SRC)
 
 static void gst_vimbasrc_class_init(GstVimbaSrcClass *klass)
 {
@@ -476,22 +470,8 @@ static void gst_vimbasrc_init(GstVimbaSrc *vimbasrc)
     GST_TRACE_OBJECT(vimbasrc, "init");
     GST_INFO_OBJECT(vimbasrc, "gst-vimbasrc version %s", VERSION);
     VmbError_t result = VmbErrorSuccess;
-    // Start the Vimba API
-    G_LOCK(vmb_open_count);
-    if (0 == vmb_open_count++)
-    {
-        result = VmbStartup();
-        GST_DEBUG_OBJECT(vimbasrc, "VmbStartup returned: %s", ErrorCodeToMessage(result));
-        if (result != VmbErrorSuccess)
-        {
-            GST_ERROR_OBJECT(vimbasrc, "Vimba initialization failed");
-        }
-    }
-    else
-    {
-        GST_DEBUG_OBJECT(vimbasrc, "VmbStartup was already called. Current open count: %u", vmb_open_count);
-    }
-    G_UNLOCK(vmb_open_count);
+    
+    start_vimba(GST_OBJECT(vimbasrc));
 
     // Log the used VimbaC version
     VmbVersionInfo_t version_info;
@@ -975,17 +955,7 @@ void gst_vimbasrc_finalize(GObject *object)
         vimbasrc->camera.is_connected = false;
     }
 
-    G_LOCK(vmb_open_count);
-    if (0 == --vmb_open_count)
-    {
-        VmbShutdown();
-        GST_INFO_OBJECT(vimbasrc, "Vimba API was shut down");
-    }
-    else
-    {
-        GST_DEBUG_OBJECT(vimbasrc, "VmbShutdown not called. Current open count: %u", vmb_open_count);
-    }
-    G_UNLOCK(vmb_open_count);
+    stop_vimba(GST_OBJECT(vimbasrc));
 
     G_OBJECT_CLASS(gst_vimbasrc_parent_class)->finalize(object);
 }
@@ -1313,10 +1283,21 @@ static GstFlowReturn gst_vimbasrc_create(GstPushSrc *src, GstBuffer **buf)
 
 static gboolean plugin_init(GstPlugin *plugin)
 {
+    GST_DEBUG_CATEGORY_INIT(gst_vimbasrc_debug_category,
+                            "vimbasrc",
+                            0,
+                            "debug category for vimbasrc element");
 
     /* FIXME Remember to set the rank if it's an element that is meant to be autoplugged by decodebin. */
-    return gst_element_register(plugin, "vimbasrc", GST_RANK_NONE,
-                                GST_TYPE_vimbasrc);
+    if (!gst_element_register(plugin, "vimbasrc", GST_RANK_NONE, GST_TYPE_vimbasrc))
+    {
+        return FALSE;
+    }
+
+    return gst_device_provider_register(plugin,
+                                        "vimbasrcdeviceprovider",
+                                        GST_RANK_PRIMARY + 1,
+                                        GST_TYPE_VIMBASRC_DEVICE_PROVIDER);
 }
 
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
@@ -2002,4 +1983,40 @@ void log_available_enum_entries(GstVimbaSrc *vimbasrc, const char *feat_name)
     }
 
     free((void *)trigger_source_values);
+}
+
+void start_vimba(GstObject *vimbasrc)
+{
+    VmbError_t result = VmbErrorSuccess;
+    // Start the Vimba API
+    G_LOCK(vmb_open_count);
+    if (0 == vmb_open_count++)
+    {
+        result = VmbStartup();
+        GST_DEBUG_OBJECT(vimbasrc, "VmbStartup returned: %s", ErrorCodeToMessage(result));
+        if (result != VmbErrorSuccess)
+        {
+            GST_ERROR_OBJECT(vimbasrc, "Vimba initialization failed");
+        }
+    }
+    else
+    {
+        GST_DEBUG_OBJECT(vimbasrc, "VmbStartup was already called. Current open count: %u", vmb_open_count);
+    }
+    G_UNLOCK(vmb_open_count);
+}
+
+void stop_vimba(GstObject *vimbasrc)
+{
+    G_LOCK(vmb_open_count);
+    if (0 == --vmb_open_count)
+    {
+        VmbShutdown();
+        GST_INFO_OBJECT(vimbasrc, "Vimba API was shut down");
+    }
+    else
+    {
+        GST_DEBUG_OBJECT(vimbasrc, "VmbShutdown not called. Current open count: %u", vmb_open_count);
+    }
+    G_UNLOCK(vmb_open_count);
 }

@@ -37,6 +37,9 @@ G_BEGIN_DECLS
 #define GST_IS_vimbasrc(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_vimbasrc))
 #define GST_IS_vimbasrc_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_vimbasrc))
 
+GST_DEBUG_CATEGORY_EXTERN (gst_vimbasrc_debug_category);
+#define GST_CAT_DEFAULT gst_vimbasrc_debug_category
+
 /* Allowed values for "Auto" camera Features */
 typedef enum
 {
@@ -201,5 +204,22 @@ VmbError_t stop_image_acquisition(GstVimbaSrc *vimbasrc);
 void VMB_CALL vimba_frame_callback(const VmbHandle_t cameraHandle, VmbFrame_t *pFrame);
 void map_supported_pixel_formats(GstVimbaSrc *vimbasrc);
 void log_available_enum_entries(GstVimbaSrc *vimbasrc, const char *feat_name);
+
+/**
+ * @brief Start the global Vimba instance if needed
+ * 
+ * @param vimbasrc GStreamer object which requested the vimba instance
+ */
+void start_vimba(GstObject *vimbasrc);
+
+/**
+ * @brief Stop the global vimba instance
+ * 
+ * Only stops it if the reference count is zero,
+ * otherwise only the reference count is decreased.
+ * 
+ * @param vimbasrc GStreamer object which requested the vimba instance
+ */
+void stop_vimba(GstObject *vimbasrc);
 
 #endif

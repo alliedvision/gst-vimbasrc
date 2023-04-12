@@ -183,7 +183,7 @@ gst_vimbasrc_device_provider_probe (GstDeviceProvider *provider)
 
       for (VmbUint32_t i = 0; i < count; ++i)
       {
-        self->devices = g_list_append(self->devices, create_gstdevice_from_vmbcamerainfo(cameras + i));
+        gst_device_provider_device_add(provider, create_gstdevice_from_vmbcamerainfo(cameras + i));
       }
     }
     else
@@ -216,15 +216,15 @@ gst_vimbasrc_device_provider_start(GstDeviceProvider *provider)
 
   GST_DEBUG_OBJECT(self, "Starting vimba device provider");
 
-  /* TODO: The base class does not call _probe so only added devices will be shown in gst-device-monitor-1.0
-           Should we call _probe our own?
-  */
-
   VmbError_t err = VmbFeatureInvalidationRegister(gVimbaHandle, "DiscoveryCameraEvent", callback_vimba_camera_discovery, self);
   if (err != VmbErrorSuccess) {
     GST_ERROR_OBJECT(self, "Starting vimba device provider failed.");
     return FALSE;
   }
+
+  /* The base class does not call _probe so only added devices will be shown in gst-device-monitor-1.0, this is workaround. */
+  gst_vimbasrc_device_provider_probe(provider);
+
   return TRUE;
 }
 
